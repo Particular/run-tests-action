@@ -14,7 +14,7 @@ runs:
         RESET_SCRIPT: ${{ inputs.reset-script }}
       run: |
         $script = $Env:RESET_SCRIPT
-        if ($script -ne $null) {
+        if (-not ([string]::IsNullOrEmpty($script)))
           echo $Env:RESET_SCRIPT > ${{ github.action_path }}/reset-script.ps1
           echo "::set-output name=has-reset-script::true"
         }
