@@ -25,8 +25,11 @@ Write-Output "Detected target frameworks:"
 $testFrameworks | ForEach-Object { Write-Output " - $_"}
 
 $exitCode = 0
+$counter = 0
 
 foreach ($framework in $testFrameworks) {
+
+    $counter = $counter + 1
 
     if (($PSVersionTable.Platform -eq 'Unix') -and ($framework.StartsWith("net4"))) {
         continue
@@ -41,6 +44,15 @@ foreach ($framework in $testFrameworks) {
     }
 
     Write-Output "::endgroup::"
+
+    if (($counter -lt $testFrameworks.Count) -and ($Env:HAS_RESET_SCRIPT -eq 'true')) {
+        Write-Output "::group::Running reset script"
+        Invoke-Expression $Env:RESET_SCRIPT
+        if ($LASTEXITCODE -ne 0) {
+            $exitCode = 1
+        }
+        Write-Output "::endgroup::"
+    }
 }
 
 Write-Output "Exit code = $exitCode"
