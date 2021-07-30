@@ -2,9 +2,9 @@
 
 This action runs tests for Particular Software repos according to our conventions:
 
-1. Finds test projects by location *.csproj files that have a `PackageReference` for `Microsoft.NET.Test.Sdk`
+1. Finds test projects by locating *.csproj files that have a `PackageReference` for `Microsoft.NET.Test.Sdk`
 2. Finds all the target frameworks for the test projects
-3. Runs `dotnet test` for each target framework, skipping `net4*` on Windows
+3. Runs `dotnet test` for each target framework, skipping `net4*` on Linux
 
 ## Usage
 
