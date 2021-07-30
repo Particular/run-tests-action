@@ -3,26 +3,36 @@ if ($PSVersionTable.Platform -eq 'Unix') {
     $platform = 'Linux'
 }
 
-$projects = Get-ChildItem -Include "*Tests.csproj" -Recurse
+$projects = Get-ChildItem -Path src -Include "*.csproj" -Recurse
 
 $testFrameworks = New-Object Collections.Generic.HashSet[String]
+$testProjectNames = New-Object Collections.Generic.List[String]
 
-Write-Output "Detected test projects:"
+
 
 $projects | ForEach-Object {
     $filename = $_.Name
-    Write-Output " - $filename"
     $path = $_.FullName
-    Select-Xml -Path $path -XPath "/Project/PropertyGroup/TargetFrameworks" | ForEach-Object {
-        $frameworks = $_.node.InnerText -Split ';'
-        foreach( $framework in $frameworks) {
-            $testFrameworks.Add($framework) > $null
+
+    $testSdkNodes = Select-Xml -Path $path -XPath "/Project/ItemGroup/PackageReference[@Include='Microsoft.NET.Test.Sdk']"
+
+    if ( $testSdkNodes -ne $null ) {
+        $testProjectNames.Add($filename)
+
+        Select-Xml -Path $path -XPath "/Project/PropertyGroup/TargetFrameworks" | ForEach-Object {
+            $frameworks = $_.node.InnerText -Split ';'
+            foreach( $framework in $frameworks) {
+                $testFrameworks.Add($framework) > $null
+            }
         }
     }
 }
 
+Write-Output "Detected test projects:"
+$testProjectNames | ForEach-Object { Write-Output " - $_" }
+
 Write-Output "Detected target frameworks:"
-$testFrameworks | ForEach-Object { Write-Output " - $_"}
+$testFrameworks | ForEach-Object { Write-Output " - $_" }
 
 $exitCode = 0
 $counter = 0
