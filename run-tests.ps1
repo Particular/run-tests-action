@@ -8,8 +8,6 @@ $projects = Get-ChildItem -Path src -Include "*.csproj" -Recurse
 $testFrameworks = New-Object Collections.Generic.HashSet[String]
 $testProjectNames = New-Object Collections.Generic.List[String]
 
-
-
 $projects | ForEach-Object {
     $filename = $_.Name
     $path = $_.FullName
