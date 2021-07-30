@@ -19,11 +19,17 @@ $projects | ForEach-Object {
     if ( $testSdkNodes -ne $null ) {
         $testProjectNames.Add($filename)
 
+        # In case of multiple target frameworks
         Select-Xml -Path $path -XPath "/Project/PropertyGroup/TargetFrameworks" | ForEach-Object {
             $frameworks = $_.node.InnerText -Split ';'
             foreach( $framework in $frameworks) {
                 $testFrameworks.Add($framework) > $null
             }
+        }
+
+        # In case of a single target framework
+        Select-Xml -Path $path -XPath "/Project/PropertyGroup/TargetFramework" | ForEach-Object {
+            $testFrameworks.Add($_.node.InnerText) > $null
         }
     }
 }
