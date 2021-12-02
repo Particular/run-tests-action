@@ -4,7 +4,7 @@ if ($PSVersionTable.Platform -eq 'Unix') {
 }
 
 $projectFilter = $Env:PROJECT_FILTER
-$projectFilterRegex = .Replace(".", "\.").Replace("*", ".*").Replace("?", ".")
+$projectFilterRegex = $projectFilter.Replace(".", "\.").Replace("*", ".*").Replace("?", ".")
 $projects = Get-ChildItem -Path src -Include "*.csproj" -Recurse | Where-Object Name -Match $projectFilterRegex
 
 $testFrameworks = New-Object Collections.Generic.HashSet[String]
