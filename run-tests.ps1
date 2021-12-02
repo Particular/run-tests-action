@@ -40,6 +40,15 @@ $testProjectNames | ForEach-Object { Write-Output " - $_" }
 Write-Output "Detected target frameworks:"
 $testFrameworks | ForEach-Object { Write-Output " - $_" }
 
+if ($testProjectNames.Count -eq 0) {
+    Write-Output "Fatal: No test projects detected that match filter"
+    exit -1
+}
+if ($testFrameworks.Count -eq 0) {
+    Write-Output "Fatal: No target frameworks detected, something must be wrong"
+    exit -1
+}
+
 $exitCode = 0
 $counter = 0
 
