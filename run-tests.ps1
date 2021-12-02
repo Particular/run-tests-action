@@ -34,7 +34,7 @@ $projects | ForEach-Object {
     }
 }
 
-Write-Output "Detected test projects with filter '$filter':"
+Write-Output "Detected test projects with filter '$projectFilter':"
 $testProjectNames | ForEach-Object { Write-Output " - $_" }
 
 Write-Output "Detected target frameworks:"
