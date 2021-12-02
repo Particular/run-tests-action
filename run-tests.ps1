@@ -3,7 +3,9 @@ if ($PSVersionTable.Platform -eq 'Unix') {
     $platform = 'Linux'
 }
 
-$projects = Get-ChildItem -Path src -Include "*.csproj" -Recurse
+$projectFilter = $Env:PROJECT_FILTER
+$projectFilterRegex = .Replace(".", "\.").Replace("*", ".*").Replace("?", ".")
+$projects = Get-ChildItem -Path src -Include "*.csproj" -Recurse | Where-Object Name -Match $projectFilterRegex
 
 $testFrameworks = New-Object Collections.Generic.HashSet[String]
 $testProjectNames = New-Object Collections.Generic.List[String]
@@ -32,7 +34,7 @@ $projects | ForEach-Object {
     }
 }
 
-Write-Output "Detected test projects:"
+Write-Output "Detected test projects with filter '$filter':"
 $testProjectNames | ForEach-Object { Write-Output " - $_" }
 
 Write-Output "Detected target frameworks:"
