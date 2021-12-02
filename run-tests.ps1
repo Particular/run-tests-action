@@ -3,9 +3,7 @@ if ($PSVersionTable.Platform -eq 'Unix') {
     $platform = 'Linux'
 }
 
-$projectFilter = $Env:PROJECT_FILTER
-$projectFilterRegex = $projectFilter.Replace(".", "\.").Replace("*", ".*").Replace("?", ".")
-$projects = Get-ChildItem -Path src -Include "*.csproj" -Recurse | Where-Object Name -Match $projectFilterRegex
+$projects = Get-ChildItem -Path src -Include "*.csproj" -Recurse
 
 $testFrameworks = New-Object Collections.Generic.HashSet[String]
 $testProjectNames = New-Object Collections.Generic.List[String]
@@ -62,7 +60,7 @@ foreach ($framework in $testFrameworks) {
 
     Write-Output "::group::Running test suite for $framework on $platform"
     # -m:1 parameter prevents test projects from being run in parallel, which could cause conflicts since PessimisticLocks project shares same tests
-    dotnet test src --configuration Release --no-build --framework $framework --logger "GitHubActions;report-warnings=false" -m:1
+    dotnet test $Env:PATH_PARAMETER --configuration Release --no-build --framework $framework --logger "GitHubActions;report-warnings=false" -m:1
 
     if ($LASTEXITCODE -ne 0) {
         $exitCode = 1

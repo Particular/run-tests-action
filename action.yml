@@ -4,10 +4,10 @@ inputs:
   reset-script:
     description: 'pwsh expression to be run between test runs to reset infrastructure, if required'
     required: false
-  project-filter:
-    description: Filters the projects to be run by a wildcard pattern
+  path:
+    description: The path to specify for `dotnet test`. Defaults to `src` to assume a single sln file in the src directory.
     required: false
-    default: "*"
+    default: src
 runs:
   using: "composite"
   steps:
@@ -27,5 +27,5 @@ runs:
       env:
         RESET_SCRIPT: ${{ github.action_path }}/reset-script.ps1
         HAS_RESET_SCRIPT: ${{ steps.setup.outputs.has-reset-script }}
-        PROJECT_FILTER: ${{ inputs.project-filter }}
+        PATH_PARAMETER: ${{ inputs.path }}
       run: ${{ github.action_path }}/run-tests.ps1
