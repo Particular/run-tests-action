@@ -7,7 +7,7 @@ $testFrameworks = New-Object Collections.Generic.HashSet[String]
 $testProjectNames = New-Object Collections.Generic.List[String]
 
 $explicitFramework = $Env:EXPLICIT_TEST_FRAMEWORK
-if (-not ([string]::IsNullOrEmpty($script))) {
+if (-not ([string]::IsNullOrEmpty($explicitFramework))) {
 
     $testFrameworks.Add($explicitFramework);
     Write-Ouput "Target framework '$explicitFramework' defined by parameter. This is the only framework that will be tested."
