@@ -52,17 +52,6 @@ $projects | ForEach-Object {
 $testProjects = $testProjects.GetEnumerator() | Sort-Object Name
 $testFrameworks = $testFrameworks.GetEnumerator() | Sort-Object
 
-Write-Output "Detected test projects:"
-$testProjects | ForEach-Object {
-    Write-Output "- $(Split-Path $_.Name -leaf)"
-    $_.Value | ForEach-Object { Write-Output "  - $_" }
-}
-
-if (-not $isExplicitFramework) {
-    Write-Output "Detected target frameworks:"
-    $testFrameworks | ForEach-Object { Write-Output " - $_" }
-}
-
 $exitCode = 0
 $counter = 0
 
