@@ -48,7 +48,7 @@ $testProjects = $testProjects.GetEnumerator() | Sort-Object Name
 $testFrameworks = $testFrameworks.GetEnumerator() | Sort-Object
 $reportWarnings = 'false'
 
-if ($Env:TESTS_REPORT_WARNINGS -eq 'true') {
+if ($Env:REPORT_WARNINGS -eq 'true') {
     $reportWarnings = 'true'
 }
 

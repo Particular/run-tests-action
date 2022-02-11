@@ -13,7 +13,7 @@ Basic:
 ```yaml
     steps:
       - name: Run tests
-        uses: Particular/run-tests-action@v1.1.0
+        uses: Particular/run-tests-action@v1.2.0
 ```
 
 With a reset script between each test run:
@@ -21,7 +21,7 @@ With a reset script between each test run:
 ```yaml
     steps:
       - name: Run tests
-        uses: Particular/run-tests-action@v1.1.0
+        uses: Particular/run-tests-action@v1.2.0
         with:
           reset-script: |
             echo "Do whatever is necessary to reset the test infrastructure between runs of each framework"
@@ -33,9 +33,19 @@ In cases where the test matrix subdivides by target framework, you can also shor
 ```yaml
     steps:
       - name: Run tests
-        uses: Particular/run-tests-action@v1.1.0
+        uses: Particular/run-tests-action@v1.2.0
         with:
           framework: net6.0
+```
+
+By default, only failed tests are reported. To report warnings for tests that have neither failed nor succeeded (i.e. skipped or inconclusive):
+
+```yaml
+    steps:
+      - name: Run tests
+        uses: Particular/run-tests-action@v1.2.0
+        with:
+          report-warnings: true
 ```
 
 ## License

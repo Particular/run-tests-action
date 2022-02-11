@@ -27,4 +27,5 @@ runs:
         RESET_SCRIPT: ${{ github.action_path }}/reset-script.ps1
         HAS_RESET_SCRIPT: ${{ steps.setup.outputs.has-reset-script }}
         EXPLICIT_TEST_FRAMEWORK: ${{ inputs.framework }}
+        REPORT_WARNINGS: ${{ inputs.report-warnings }}
       run: ${{ github.action_path }}/run-tests.ps1
