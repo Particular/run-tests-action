@@ -1,8 +1,3 @@
-$platform = 'Windows'
-if ($PSVersionTable.Platform -eq 'Unix') {
-    $platform = 'Linux'
-}
-
 $testFrameworks = New-Object Collections.Generic.HashSet[String]
 $testProjects = @{}
 
@@ -66,11 +61,10 @@ foreach ($framework in $testFrameworks) {
     foreach ($project in $testProjects) {
 
         if (-not $project.Value.Contains($framework)) {
-            Write-Output "Skipping $(Split-Path $project.Name -leaf) ($framework on $platform)"
             continue
         }
 
-        Write-Output "::group::Running $(Split-Path $project.Name -leaf) ($framework on $platform)"
+        Write-Output "::group::Running $(Split-Path $project.Name -leaf) ($framework)"
 
         dotnet test $project.Name --configuration Release --no-build --framework $framework --logger "GitHubActions;report-warnings=false"
 
