@@ -46,6 +46,11 @@ $projects | ForEach-Object {
 
 $testProjects = $testProjects.GetEnumerator() | Sort-Object Name
 $testFrameworks = $testFrameworks.GetEnumerator() | Sort-Object
+$reportWarnings = 'false'
+
+if ($Env:TESTS_REPORT_WARNINGS -eq 'true') {
+    $reportWarnings = 'true'
+}
 
 $exitCode = 0
 $counter = 0
@@ -66,7 +71,7 @@ foreach ($framework in $testFrameworks) {
 
         Write-Output "::group::Running $(Split-Path $project.Name -leaf) ($framework)"
 
-        dotnet test $project.Name --configuration Release --no-build --framework $framework --logger "GitHubActions;report-warnings=false"
+        dotnet test $project.Name --configuration Release --no-build --framework $framework --logger "GitHubActions;report-warnings=$reportWarnings"
 
         Write-Output "::endgroup::"
 
