@@ -7,6 +7,9 @@ inputs:
   framework:
     description: Specifies the target framework to run tests for
     required: false
+  report-warnings:
+    description: Specifies whether to report warnings for tests that have neither failed nor succeeded (i.e. skipped or inconclusive)
+    required: false
 runs:
   using: "composite"
   steps:
