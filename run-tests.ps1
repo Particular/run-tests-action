@@ -71,7 +71,7 @@ foreach ($framework in $testFrameworks) {
 
         Write-Output "::group::Running $(Split-Path $project.Name -leaf) ($framework)"
 
-        dotnet test $project.Name --configuration Release --no-build --framework $framework --logger "GitHubActions;report-warnings=$reportWarnings"
+        dotnet test $project.Name --configuration Release --no-build --framework $framework --logger "GitHubActions;report-warnings=$reportWarnings" -- RunConfiguration.TargetPlatform=x64
 
         Write-Output "::endgroup::"
 
