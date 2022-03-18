@@ -10,6 +10,8 @@ if ($isExplicitFramework) {
 
 }
 
+Write-Output "Target Platform = $($Env:TARGET_PLATFORM)"
+
 $projects = Get-ChildItem -Path src -Include "*.csproj" -Recurse
 
 $projects | ForEach-Object {
@@ -71,7 +73,9 @@ foreach ($framework in $testFrameworks) {
 
         Write-Output "::group::Running $(Split-Path $project.Name -leaf) ($framework)"
 
-        dotnet test $project.Name --configuration Release --no-build --framework $framework --logger "GitHubActions;report-warnings=$reportWarnings" -- RunConfiguration.TargetPlatform=x64
+        $targetPlatformParam = "RunConfiguration.TargetPlatform=$($Env:TARGET_PLATFORM)"
+
+        dotnet test $project.Name --configuration Release --no-build --framework $framework --logger "GitHubActions;report-warnings=$reportWarnings" -- $targetPlatformParam
 
         Write-Output "::endgroup::"
 
