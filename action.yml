@@ -10,6 +10,10 @@ inputs:
   report-warnings:
     description: Specifies whether to report warnings for tests that have neither failed nor succeeded (i.e. skipped or inconclusive)
     required: false
+  target-platform:
+    description: Specifies the RunConfiguration.TargetPlatform for dotnet test. Defaults to 'x64'.
+    required: false
+    default: x64
 runs:
   using: "composite"
   steps:
@@ -31,4 +35,5 @@ runs:
         HAS_RESET_SCRIPT: ${{ steps.setup.outputs.has-reset-script }}
         EXPLICIT_TEST_FRAMEWORK: ${{ inputs.framework }}
         REPORT_WARNINGS: ${{ inputs.report-warnings }}
+        TARGET_PLATFORM: ${{ inputs.target-platform }}
       run: ${{ github.action_path }}/run-tests.ps1
