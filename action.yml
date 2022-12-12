@@ -26,7 +26,7 @@ runs:
         $script = $Env:RESET_SCRIPT
         if (-not ([string]::IsNullOrEmpty($script))) {
           echo $Env:RESET_SCRIPT > ${{ github.action_path }}/reset-script.ps1
-          echo "::set-output name=has-reset-script::true"
+          echo "has-reset-script=true" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
         }
     - name: Run tests
       shell: pwsh
