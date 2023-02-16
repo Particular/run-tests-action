@@ -58,6 +58,16 @@ By default, `dotnet test` uses `x64` as the target platform. This can be overrid
           target-platform: x86
 ```
 
+To filter tests use the filter argument together with the [dotnet test filter syntax(https://learn.microsoft.com/en-us/dotnet/core/testing/selective-unit-tests)
+
+```yaml
+    steps:
+      - name: Run tests
+        uses: Particular/run-tests-action@v1.3.0
+        with:
+          filter: TestCategory=MyTestCategory
+```
+
 ## License
 
 The scripts and documentation in this project are released under the [MIT License](LICENSE.md).
