@@ -13,7 +13,7 @@ Basic:
 ```yaml
     steps:
       - name: Run tests
-        uses: Particular/run-tests-action@v1.4.0
+        uses: Particular/run-tests-action@v1.5.0
 ```
 
 With a reset script between each test run:
@@ -21,7 +21,7 @@ With a reset script between each test run:
 ```yaml
     steps:
       - name: Run tests
-        uses: Particular/run-tests-action@v1.4.0
+        uses: Particular/run-tests-action@v1.5.0
         with:
           reset-script: |
             echo "Do whatever is necessary to reset the test infrastructure between runs of each framework"
@@ -33,7 +33,7 @@ In cases where the test matrix subdivides by target framework, you can also shor
 ```yaml
     steps:
       - name: Run tests
-        uses: Particular/run-tests-action@v1.4.0
+        uses: Particular/run-tests-action@v1.5.0
         with:
           framework: net6.0
 ```
@@ -43,7 +43,7 @@ By default, only failed tests are reported. To report warnings for tests that ha
 ```yaml
     steps:
       - name: Run tests
-        uses: Particular/run-tests-action@v1.4.0
+        uses: Particular/run-tests-action@v1.5.0
         with:
           report-warnings: true
 ```
@@ -53,7 +53,7 @@ By default, `dotnet test` uses `x64` as the target platform. This can be overrid
 ```yaml
     steps:
       - name: Run tests
-        uses: Particular/run-tests-action@v1.4.0
+        uses: Particular/run-tests-action@v1.5.0
         with:
           target-platform: x86
 ```
@@ -63,7 +63,7 @@ To filter tests use the filter argument together with the [dotnet test filter sy
 ```yaml
     steps:
       - name: Run tests
-        uses: Particular/run-tests-action@v1.4.0
+        uses: Particular/run-tests-action@v1.5.0
         with:
           filter: TestCategory=MyTestCategory
 ```
