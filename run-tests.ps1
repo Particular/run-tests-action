@@ -49,6 +49,7 @@ $projects | ForEach-Object {
 $testProjects = $testProjects.GetEnumerator() | Sort-Object Name
 $testFrameworks = $testFrameworks.GetEnumerator() | Sort-Object
 $reportWarnings = 'false'
+$filter = $Env:FILTER
 
 if ($Env:REPORT_WARNINGS -eq 'true') {
     $reportWarnings = 'true'
@@ -75,7 +76,7 @@ foreach ($framework in $testFrameworks) {
 
         $targetPlatformParam = "RunConfiguration.TargetPlatform=$($Env:TARGET_PLATFORM)"
 
-        dotnet test $project.Name --configuration Release --no-build --framework $framework --logger "GitHubActions;report-warnings=$reportWarnings" -- $targetPlatformParam
+        dotnet test $project.Name --configuration Release --no-build --framework $framework --filter $filter --logger "GitHubActions;report-warnings=$reportWarnings" -- $targetPlatformParam
 
         Write-Output "::endgroup::"
 
