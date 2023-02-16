@@ -52,7 +52,7 @@ $reportWarnings = 'false'
 $filter = ''
 
 if ($Env:FILTER -ne '') {
-    $filter = "--filter $($Env:FILTER)"
+    $filter = $($Env:FILTER)
 }
 
 $exitCode = 0
@@ -77,7 +77,7 @@ foreach ($framework in $testFrameworks) {
         $targetPlatformParam = "RunConfiguration.TargetPlatform=$($Env:TARGET_PLATFORM)"
 
         if ($filter -ne '') {
-           dotnet test $project.Name --configuration Release --no-build --filter $filter --framework $framework --logger "GitHubActions;report-warnings=$reportWarnings" -- $targetPlatformParam
+           dotnet test $project.Name --configuration Release --no-build --filter "$filter" --framework $framework --logger "GitHubActions;report-warnings=$reportWarnings" -- $targetPlatformParam
         }
         else {
             dotnet test $project.Name --configuration Release --no-build --framework $framework --logger "GitHubActions;report-warnings=$reportWarnings" -- $targetPlatformParam
