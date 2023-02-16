@@ -51,8 +51,8 @@ $testFrameworks = $testFrameworks.GetEnumerator() | Sort-Object
 $reportWarnings = 'false'
 $filter = ''
 
-if ($Env:FILTER -ne '') {
-    $filter = $($Env:FILTER)
+if ($Env:TEST_FILTER -ne '') {
+    $filter = $($Env:TEST_FILTER)
 }
 
 $exitCode = 0
