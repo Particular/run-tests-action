@@ -49,6 +49,11 @@ $projects | ForEach-Object {
 $testProjects = $testProjects.GetEnumerator() | Sort-Object Name
 $testFrameworks = $testFrameworks.GetEnumerator() | Sort-Object
 $reportWarnings = 'false'
+
+if ($Env:REPORT_WARNINGS -eq 'true') {
+    $reportWarnings = 'true'
+}
+
 $filter = ''
 
 if ($Env:TEST_FILTER -ne '') {
