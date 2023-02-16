@@ -14,6 +14,9 @@ inputs:
     description: Specifies the RunConfiguration.TargetPlatform for dotnet test. Defaults to 'x64'.
     required: false
     default: x64
+  filter:
+    description: Specifies the filter, if any, to use when running the tests
+    required: false
 runs:
   using: "composite"
   steps:
@@ -36,4 +39,5 @@ runs:
         EXPLICIT_TEST_FRAMEWORK: ${{ inputs.framework }}
         REPORT_WARNINGS: ${{ inputs.report-warnings }}
         TARGET_PLATFORM: ${{ inputs.target-platform }}
+        TEST_FILTER: ${{ inputs.filter }}        
       run: ${{ github.action_path }}/run-tests.ps1
