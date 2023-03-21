@@ -82,10 +82,10 @@ foreach ($framework in $testFrameworks) {
         $targetPlatformParam = "RunConfiguration.TargetPlatform=$($Env:TARGET_PLATFORM)"
 
         if ($filter -ne '') {
-           dotnet test $project.Name --configuration Release --no-build --filter "$filter" --framework $framework --logger "GitHubActions;report-warnings=$reportWarnings" -- $targetPlatformParam
+           dotnet test $project.Name --configuration Release --no-build --filter "$filter" --framework $framework --logger "GitHubActions;report-warnings=$reportWarnings" -- RunConfiguration.TreatNoTestsAsError=true $targetPlatformParam 
         }
         else {
-            dotnet test $project.Name --configuration Release --no-build --framework $framework --logger "GitHubActions;report-warnings=$reportWarnings" -- $targetPlatformParam
+            dotnet test $project.Name --configuration Release --no-build --framework $framework --logger "GitHubActions;report-warnings=$reportWarnings" -- RunConfiguration.TreatNoTestsAsError=true $targetPlatformParam
         }
         
 
