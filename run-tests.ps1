@@ -60,6 +60,12 @@ if ($Env:TEST_FILTER -ne '') {
     $filter = $($Env:TEST_FILTER)
 }
 
+$treatNoTestsAsError = true
+
+if ($Env:TREAT_NO_TESTS_AS_ERROR -ne '') {
+    $treatNoTestsAsError = $($Env:TREAT_NO_TESTS_AS_ERROR)
+}
+
 $exitCode = 0
 $counter = 0
 
@@ -82,10 +88,10 @@ foreach ($framework in $testFrameworks) {
         $targetPlatformParam = "RunConfiguration.TargetPlatform=$($Env:TARGET_PLATFORM)"
 
         if ($filter -ne '') {
-           dotnet test $project.Name --configuration Release --no-build --filter "$filter" --framework $framework --logger "GitHubActions;report-warnings=$reportWarnings" -- RunConfiguration.TreatNoTestsAsError=true $targetPlatformParam
+           dotnet test $project.Name --configuration Release --no-build --filter "$filter" --framework $framework --logger "GitHubActions;report-warnings=$reportWarnings" -- RunConfiguration.TreatNoTestsAsError=$treatNoTestsAsError $targetPlatformParam
         }
         else {
-            dotnet test $project.Name --configuration Release --no-build --framework $framework --logger "GitHubActions;report-warnings=$reportWarnings" -- RunConfiguration.TreatNoTestsAsError=true $targetPlatformParam
+            dotnet test $project.Name --configuration Release --no-build --framework $framework --logger "GitHubActions;report-warnings=$reportWarnings" -- RunConfiguration.TreatNoTestsAsError=$treatNoTestsAsError $targetPlatformParam
         }
         
 
