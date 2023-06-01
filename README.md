@@ -65,7 +65,7 @@ This action does not support the [dotnet test filter syntax](https://learn.micro
 1. No tests were found in an assembly becuase they did not match the filter, as was intended.
 2. No tests were found in an assembly because there was an error in the test adapter package, and valid tests are not being properly executed.
 
-Due to the danger of the second case, filtering is not supported. Instead attributes that implement NUnit's `IApplyToContext` interface can be applied at the method, class, or assembly level and call `Assert.Ignore(reason)` to ignore groups of tests in certain conditions.
+Due to the danger of the second case, filtering is not supported. Instead, attributes that implement NUnit's `IApplyToContext` interface can be applied at the method, class, or assembly level and call `Assert.Ignore(reason)` to ignore groups of tests in certain conditions.
 
 An example of this can be found in SQL Persistence in the [`EngineSpecificTestAttribute`](https://github.com/Particular/NServiceBus.Persistence.Sql/blob/master/src/TestHelper/EngineSpecificTestAttributes/EngineSpecificTestAttribute.cs) class, which is inherited by [other attribute classes](https://github.com/Particular/NServiceBus.Persistence.Sql/tree/master/src/TestHelper/EngineSpecificTestAttributes) for each supported database engine. This makes it possible to use a single `[assembly: SqlServerTest]` to only run tests in that project when a SQL Server connection string is available.
 
