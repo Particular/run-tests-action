@@ -9,8 +9,8 @@ namespace ProjectTests
     [SetUpFixture]
     public class TestSetup
     {
-        internal static string RootDirectory;
-        internal static string ActionRootPath;
+        public static string RootDirectory { get; private set; }
+        public static string ActionRootPath { get; private set; }
 
         [OneTimeSetUp]
         public void SetupRootDirectories()
@@ -22,7 +22,7 @@ namespace ProjectTests
             // For local testing, set to the path of a specific repo, or your whole projects directory, whatever works
             RootDirectory = @"P:\NServiceBus";
 #else
-            RootDirectories = Environment.CurrentDirectory;
+            RootDirectory = System.Environment.CurrentDirectory;
 #endif
         }
     }
