@@ -36,5 +36,6 @@ runs:
         EXPLICIT_TEST_FRAMEWORK: ${{ inputs.framework }}
         REPORT_WARNINGS: ${{ inputs.report-warnings }}
         TARGET_PLATFORM: ${{ inputs.target-platform }}
-        TEST_FILTER: ${{ inputs.filter }}        
+        TEST_FILTER: ${{ inputs.filter }}
+        PROJECT_TESTS_PATH: ${{ github.action_path }}/project-tests
       run: ${{ github.action_path }}/run-tests.ps1
