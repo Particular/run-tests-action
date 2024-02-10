@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using NUnit.Framework;
 
 [assembly: Parallelizable(ParallelScope.All)]
@@ -22,8 +23,8 @@ namespace ProjectTests
             // For local testing, set to the path of a specific repo, or your whole projects directory, whatever works
             RootDirectory = @"P:\NServiceBus";
 #else
-            RootDirectory = System.Environment.GetEnvironmentVariable("GITHUB_WORKSPACE")
-                ?? System.Environment.CurrentDirectory;
+            RootDirectory = Environment.GetEnvironmentVariable("GITHUB_WORKSPACE")
+                ?? Environment.CurrentDirectory;
 #endif
             Console.WriteLine($"RootDirectory = {RootDirectory}");
         }
