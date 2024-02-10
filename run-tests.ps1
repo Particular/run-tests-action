@@ -6,7 +6,7 @@ if ($Env:REPORT_WARNINGS -eq 'true') {
 }
 
 Write-Output "::group::Running standardized project tests"
-dotnet test $Env:PROJECT_TESTS_PATH --logger "GitHubActions;report-warnings=$reportWarnings" -- RunConfiguration.TreatNoTestsAsError=true
+dotnet test $Env:PROJECT_TESTS_PATH --configuration Release --logger "GitHubActions;report-warnings=$reportWarnings" -- RunConfiguration.TreatNoTestsAsError=true
 Write-Output "::endgroup::"
 
 if ($LASTEXITCODE -ne 0) {
