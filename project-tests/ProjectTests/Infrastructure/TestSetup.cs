@@ -22,8 +22,10 @@ namespace ProjectTests
             // For local testing, set to the path of a specific repo, or your whole projects directory, whatever works
             RootDirectory = @"P:\NServiceBus";
 #else
-            RootDirectory = System.Environment.CurrentDirectory;
+            RootDirectory = System.Environment.GetEnvironmentVariable("GITHUB_WORKSPACE")
+                ?? System.Environment.CurrentDirectory;
 #endif
+            Console.WriteLine($"RootDirectory = {RootDirectory}");
         }
     }
 }
