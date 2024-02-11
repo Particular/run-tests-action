@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
@@ -28,7 +27,7 @@ namespace ProjectTests.Infrastructure
 
             Name = root["name"].GetValue<string>();
             RunName = root["run-name"]?.GetValue<string>();
-            On = root["on"].AsObject();
+            On = ParseTriggerEvents(root["on"]);
             Permissions = JsonSerializer.Deserialize<IReadOnlyDictionary<string, string>>(root["permissions"]);
             Env = JsonSerializer.Deserialize<IReadOnlyDictionary<string, string>>(root["env"]);
 
@@ -43,11 +42,53 @@ namespace ProjectTests.Infrastructure
 
         public string Name { get; }
         public string RunName { get; }
-        public JsonObject On { get; }
-        public IReadOnlyDictionary<string, string> Permissions { get; }
-        public IReadOnlyDictionary<string, string> Env { get; }
+        public WorkflowTrigger[] On { get; }
+        public IReadOnlyDictionary<string, string> Permissions { get; } = new Dictionary<string, string>();
+        public IReadOnlyDictionary<string, string> Env { get; } = new Dictionary<string, string>();
 
         public WorkflowJob[] Jobs { get; }
+
+        static WorkflowTrigger[] ParseTriggerEvents(JsonNode on)
+        {
+            if (on is null)
+            {
+                return [];
+            }
+
+            var kind = on.GetValueKind();
+            if (kind == JsonValueKind.String)
+            {
+                var stringValue = on.GetValue<string>();
+                return [new WorkflowTrigger(stringValue)];
+            }
+            else if (kind == JsonValueKind.Array)
+            {
+                return on.AsArray().Select(evt => new WorkflowTrigger(evt.GetValue<string>())).ToArray();
+            }
+            else if (kind == JsonValueKind.Object)
+            {
+                return on.AsObject().Select(pair =>
+                {
+                    var trigger = new WorkflowTrigger(pair.Key);
+                    if (pair.Value is not null)
+                    {
+                        trigger.Filters = JsonSerializer.Deserialize<IReadOnlyDictionary<string, string[]>>(pair.Value);
+                    }
+                    return trigger;
+                })
+                .ToArray();
+            }
+
+            throw new System.Exception("Unable to parse workflow triggers");
+        }
+    }
+
+    public class WorkflowTrigger(string eventId)
+    {
+        public string EventId { get; } = eventId;
+        public IReadOnlyDictionary<string, string[]> Filters { get; set; } = new Dictionary<string, string[]>();
+
+        public override string ToString() => $"Trigger on: {EventId}" + (Filters.Count > 0 ? $", filter on {string.Join(",", Filters.Keys)}" : "");
     }
 
     public class WorkflowJob
