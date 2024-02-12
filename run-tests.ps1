@@ -1,3 +1,20 @@
+$reportWarnings = 'false'
+$exitCode = 0
+
+if ($Env:REPORT_WARNINGS -eq 'true') {
+    $reportWarnings = 'true'
+}
+
+Write-Output "::group::Running standardized project tests"
+dotnet test $Env:PROJECT_TESTS_PATH --configuration Release --logger "GitHubActions;report-warnings=$reportWarnings" -- RunConfiguration.TreatNoTestsAsError=true
+Write-Output "::endgroup::"
+
+if ($LASTEXITCODE -ne 0) {
+    Write-Output "::error::Exit code = $LASTEXITCODE"
+    $exitCode = 1
+    exit 1
+}
+
 $testFrameworks = New-Object Collections.Generic.HashSet[String]
 $testProjects = @{}
 
@@ -48,13 +65,7 @@ $projects | ForEach-Object {
 
 $testProjects = $testProjects.GetEnumerator() | Sort-Object Name
 $testFrameworks = $testFrameworks.GetEnumerator() | Sort-Object
-$reportWarnings = 'false'
 
-if ($Env:REPORT_WARNINGS -eq 'true') {
-    $reportWarnings = 'true'
-}
-
-$exitCode = 0
 $counter = 0
 
 foreach ($framework in $testFrameworks) {
