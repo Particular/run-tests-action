@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Xml.Linq;
 
 namespace ProjectTests
@@ -10,12 +12,15 @@ namespace ProjectTests
         public string DirectoryPath { get; } = Path.GetDirectoryName(filePath);
         public bool IsFailed { get; private set; }
 
-        public string FailReason { get; private set; }
+        public List<string> FailReasons { get; } = new();
 
         public void Fail(string reason = null)
         {
             IsFailed = true;
-            FailReason = reason;
+            if (reason is not null)
+            {
+                FailReasons.Add(reason);
+            }
         }
 
         private Lazy<XDocument> xdoc = new Lazy<XDocument>(() => XDocument.Load(filePath), false);
@@ -23,9 +28,17 @@ namespace ProjectTests
 
         public override string ToString()
         {
-            return IsFailed
-                ? $"{FilePath}: Failed: {FailReason ?? "(no reason)"}"
-                : $"{FilePath}: OK";
+            if (!IsFailed)
+            {
+                return "OK";
+            }
+
+            return FailReasons.Count switch
+            {
+                0 => "Failed: (no reason)",
+                1 => $"Failed: {FailReasons.First()}",
+                _ => $"Failed: {FailReasons.Count} reasons"
+            };
         }
     }
 }

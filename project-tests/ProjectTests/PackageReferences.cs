@@ -1,11 +1,12 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using System.Xml.XPath;
+using NuGet.Versioning;
 using NUnit.Framework;
 
 namespace ProjectTests
 {
-    public class PackageReferences
+    public partial class PackageReferences
     {
         [Test]
         public void PrivateAssetsAsAttributesNotElements()
@@ -44,6 +45,63 @@ namespace ProjectTests
                             {
                                 file.Fail("ItemGroup mixes " + string.Join(", ", childNames));
                                 return;
+                            }
+                        }
+                    }
+                });
+        }
+
+        [Test]
+        public void VersionRangesInPackableProjects()
+        {
+            new TestRunner("*.csproj", "In packable projects, NServiceBus dependencies should be a version range except when set to a prerelease version")
+                .PackagingProjects()
+                .Run(f =>
+                {
+                    var packageReferenceElements = f.XDocument.XPathSelectElements("/Project/ItemGroup/PackageReference");
+
+                    foreach (var pkgRef in packageReferenceElements)
+                    {
+                        var package = pkgRef.Attribute("Include").Value;
+                        var versionStr = pkgRef.Attribute("Version")?.Value;
+                        if (versionStr is not null && package.StartsWith("NServiceBus"))
+                        {
+                            if (NuGetVersion.TryParse(versionStr, out var version))
+                            {
+                                if (!version.IsPrerelease)
+                                {
+                                    f.Fail($"Package '{package}' version '{versionStr}' is not a prerelease and should be defined as a range [A.B.C, X.0.0) where usually X = A + 1");
+                                }
+                            }
+                            else if (VersionRange.TryParse(versionStr, out var range))
+                            {
+                                if (!range.IsMinInclusive || range.IsMaxInclusive)
+                                {
+                                    f.Fail($"Package '{package}' version '{versionStr}' should be of the form [A.B.C, X.0.0) where usually X = A + 1");
+                                }
+                            }
+                        }
+                    }
+                });
+        }
+
+        [Test]
+        public void AbsoluteVersionsInTestProjects()
+        {
+            new TestRunner("*.csproj", "Test projects should use absolute versions of dependencies so that Dependabot can update them")
+                .TestProjects()
+                .Run(f =>
+                {
+                    var packageReferenceElements = f.XDocument.XPathSelectElements("/Project/ItemGroup/PackageReference");
+
+                    foreach (var pkgRef in packageReferenceElements)
+                    {
+                        var versionStr = pkgRef.Attribute("Version")?.Value;
+                        if (versionStr is not null)
+                        {
+                            if (!NuGetVersion.TryParse(versionStr, out var version))
+                            {
+                                f.Fail();
                             }
                         }
                     }
