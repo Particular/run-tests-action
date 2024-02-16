@@ -61,7 +61,7 @@ foreach ($framework in $testFrameworks) {
 
     $counter = $counter + 1
 
-    if (($PSVersionTable.Platform -eq 'Unix') -and ($framework.StartsWith("net4"))) {
+    if (($PSVersionTable.Platform -eq 'Unix') -and ($framework.StartsWith("net4") -or $framework.Contains("-windows"))) {
         continue
     }
 
