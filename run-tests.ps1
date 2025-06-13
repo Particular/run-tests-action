@@ -75,7 +75,7 @@ foreach ($framework in $testFrameworks) {
 
         $targetPlatformParam = "RunConfiguration.TargetPlatform=$($Env:TARGET_PLATFORM)"
 
-        dotnet test $project.Name --configuration Release --no-build --framework $framework --logger "GitHubActions;report-warnings=$reportWarnings" -- RunConfiguration.TreatNoTestsAsError=true $targetPlatformParam
+        dotnet test -v d $project.Name --configuration Release --no-build --framework $framework --logger "GitHubActions;report-warnings=$reportWarnings" -- RunConfiguration.TreatNoTestsAsError=true $targetPlatformParam
 
         Write-Output "::endgroup::"
 
