@@ -33,6 +33,8 @@
 #
 # EXPLICIT_TEST_FRAMEWORK short-circuits framework discovery to a single value in both modes.
 
+$ErrorActionPreference = 'Stop'
+
 $explicitFramework = $Env:EXPLICIT_TEST_FRAMEWORK
 $isExplicitFramework = -not ([string]::IsNullOrEmpty($explicitFramework))
 
