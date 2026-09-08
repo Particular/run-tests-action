@@ -2,7 +2,7 @@ name: 'Run tests'
 description: 'Runs dotnet test using target frameworks appropriate for the current platform'
 inputs:
   reset-script:
-    description: 'pwsh expression to be run between test runs to reset infrastructure, if required'
+    description: 'pwsh expression to be run between test runs to reset infrastructure, if required. Only used when max-parallel is 1; ignored (with a warning) when max-parallel > 1.'
     required: false
   framework:
     description: Specifies the target framework to run tests for
@@ -14,6 +14,22 @@ inputs:
     description: Specifies the RunConfiguration.TargetPlatform for dotnet test. Defaults to 'x64'.
     required: false
     default: x64
+  projects:
+    description: >-
+      Optional newline- or semicolon-delimited list of project paths to run instead of
+      auto-discovering test projects. When provided, project discovery is
+      skipped and only the listed projects are tested. When absent, today's
+      discovery behavior (all *.csproj under src/ referencing
+      Microsoft.NET.Test.Sdk) is preserved.
+    required: false
+  max-parallel:
+    description: >-
+      Maximum number of `dotnet test` processes to run concurrently. Defaults
+      to 1 (sequential), which preserves the historic behavior. Values greater
+      than 1 enable parallel execution with buffered, per-run output replay,
+      and disable reset-script.
+    required: false
+    default: '1'
 runs:
   using: "composite"
   steps:
@@ -37,4 +53,6 @@ runs:
         REPORT_WARNINGS: ${{ inputs.report-warnings }}
         TARGET_PLATFORM: ${{ inputs.target-platform }}
         TEST_FILTER: ${{ inputs.filter }}
+        TEST_PROJECTS: ${{ inputs.projects }}
+        MAX_PARALLEL: ${{ inputs.max-parallel }}
       run: ${{ github.action_path }}/run-tests.ps1
