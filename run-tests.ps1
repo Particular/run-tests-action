@@ -26,7 +26,7 @@
 #
 # Project selection:
 #
-#  * If TEST_PROJECTS is set, it is a newline-delimited list of project paths; discovery is skipped
+#  * If TEST_PROJECTS is set, it is a newline- or semicolon-delimited list of project paths; discovery is skipped
 #    and only those projects are tested.
 #  * Otherwise, today's discovery is used: every *.csproj under src/ that references
 #    Microsoft.NET.Test.Sdk.
@@ -54,7 +54,7 @@ $hasExplicitProjects = -not ([string]::IsNullOrEmpty($explicitProjectsRaw))
 $testProjects = @{}
 
 if ($hasExplicitProjects) {
-    $projectPaths = $explicitProjectsRaw -Split "`n" | ForEach-Object { $_.Trim() } | Where-Object { $_ }
+    $projectPaths = $explicitProjectsRaw -Split "[\n;]" | ForEach-Object { $_.Trim() } | Where-Object { $_ }
     Write-Output "Using explicit project list ($($projectPaths.Count) project(s)) supplied via 'projects' input; project discovery is skipped."
 
     foreach ($project in $projectPaths) {

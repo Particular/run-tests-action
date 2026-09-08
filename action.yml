@@ -16,7 +16,7 @@ inputs:
     default: x64
   projects:
     description: >-
-      Optional newline-delimited list of project paths to run instead of
+      Optional newline- or semicolon-delimited list of project paths to run instead of
       auto-discovering test projects. When provided, project discovery is
       skipped and only the listed projects are tested. When absent, today's
       discovery behavior (all *.csproj under src/ referencing

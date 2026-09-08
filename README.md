@@ -60,7 +60,7 @@ By default, `dotnet test` uses `x64` as the target platform. This can be overrid
 
 ## Running a subset of projects
 
-By default the action discovers every `*.csproj` under `src/` that references `Microsoft.NET.Test.Sdk` and runs all of them. Pass `projects` to run an explicit, newline-delimited list of project paths instead, skipping discovery entirely. (Added in v1.8.0)
+By default the action discovers every `*.csproj` under `src/` that references `Microsoft.NET.Test.Sdk` and runs all of them. Pass `projects` to run an explicit list of project paths instead, skipping discovery entirely. The list may be newline- or semicolon-delimited. (Added in v1.8.0)
 
 This is the intended integration point for repositories that subdivide their test suite by category and select a subset of assemblies per matrix job. For example, ServiceControl's [`tools/select-test-projects.ps1`](https://github.com/Particular/ServiceControl/blob/master/tools/select-test-projects.ps1) writes each category's project list to `$GITHUB_OUTPUT` as a multiline `test-projects` value, which can be passed straight through:
 
