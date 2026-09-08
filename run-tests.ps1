@@ -252,18 +252,17 @@ else {
         }
         Write-Output '::endgroup::'
 
-        if ($run.Process.ExitCode -ne 0) {
-            Write-Output "::error::$($run.Label) exit code = $($run.Process.ExitCode)"
+        if ($run.ExitCode -ne 0) {
+            Write-Output "::error::$($run.Label) exit code = $($run.ExitCode)"
             $script:exitCode = 1
         }
     }
 
-    $pending = [Collections.Generic.Queue[object]]::new($runs)
-    $active = [Collections.Generic.List[object]]::new()
+    $runs `
+        | ForEach-Object -ThrottleLimit $maxParallel -Parallel {
+            $run = $_
+            $rw = $using:reportWarnings
 
-    while ($pending.Count -gt 0 -or $active.Count -gt 0) {
-        while ($active.Count -lt $maxParallel -and $pending.Count -gt 0) {
-            $run = $pending.Dequeue()
             $run | Add-Member -NotePropertyName OutFile -NotePropertyValue ([IO.Path]::GetTempFileName())
             $run | Add-Member -NotePropertyName ErrFile -NotePropertyValue ([IO.Path]::GetTempFileName())
 
@@ -272,42 +271,35 @@ else {
                 '--configuration', 'Release'
                 '--no-build'
                 '--framework', $run.Framework
-                '--logger', "GitHubActions;report-warnings=$reportWarnings"
+                '--logger', "GitHubActions;report-warnings=$rw"
                 '--'
                 'RunConfiguration.TreatNoTestsAsError=true'
                 "RunConfiguration.TargetPlatform=$($Env:TARGET_PLATFORM)"
             )
 
-            # Expose this run's 0-based index to the spawned process so consumers can derive
-            # per-run distinct resources from it (e.g. a unique port). Unique across all runs in
-            # the invocation; set immediately before spawning so the child inherits it.
-            $Env:PARTICULAR_RUN_TESTS_ACTION_PARALLEL_INDEX = "$($run.Index)"
+            # Write-Host bypasses the pipeline so the message is not mistaken for a run
+            # object by the sequential ForEach-Object stage below.
+            Write-Host "Starting $($run.Label)"
 
-            Write-Output "Starting $($run.Label)"
+            $process = Start-Process -FilePath 'dotnet' -ArgumentList $arguments -NoNewWindow -PassThru `
+                    -RedirectStandardOutput $run.OutFile -RedirectStandardError $run.ErrFile `
+                    -Environment @{ PARTICULAR_RUN_TESTS_ACTION_PARALLEL_INDEX = "$($run.Index)" }
 
-            $run | Add-Member -NotePropertyName Process -NotePropertyValue (
-                Start-Process -FilePath 'dotnet' -ArgumentList $arguments -NoNewWindow -PassThru `
-                    -RedirectStandardOutput $run.OutFile -RedirectStandardError $run.ErrFile)
-            $active.Add($run)
-        }
+            while (-not $process.HasExited) {
+                Start-Sleep -Milliseconds 500
+            }
 
-        $finished = $active | Where-Object { $_.Process.HasExited }
-
-        if (-not $finished) {
-            Start-Sleep -Milliseconds 500
-            continue
-        }
-
-        foreach ($run in @($finished)) {
             # Bounded on purpose. The parameterless WaitForExit() also waits for the redirected streams to
             # reach EOF, and on Linux Start-Process pumps them through a pipe, so a test that leaves behind
             # a child holding the inherited handle blocks it forever. HasExited has already told us the
             # test process itself is done; this only gives the pump a moment to drain.
-            [void]$run.Process.WaitForExit(5000)
-            Complete-Run $run
-            [void]$active.Remove($run)
-        }
-    }
+            [void]$process.WaitForExit(5000)
+
+            $run | Add-Member -NotePropertyName ExitCode -NotePropertyValue $process.ExitCode
+            $run
+        } `
+        # Stage 2 (sequential): replay each run's buffered output so it doesn't interleave.
+        | ForEach-Object { Complete-Run $_ }
 
     exit $exitCode
 }
