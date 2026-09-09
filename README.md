@@ -90,7 +90,7 @@ By default the action runs `dotnet test` sequentially. Pass `max-parallel` (1–
           max-parallel: 4
 ```
 
-When `max-parallel > 1`, each run's stdout and stderr are buffered to temp files and replayed inside a `::group::` block once that run completes, because interleaved live `dotnet test` output is unreadable. The step fails if any run exits non-zero.
+When `max-parallel > 1`, each run's stdout and stderr are buffered to files under `$RUNNER_TEMP/run-tests-action` and replayed inside a `::group::` block once that run completes, because interleaved live `dotnet test` output is unreadable. The step fails if any run exits non-zero. A run that never completes, because the job was cancelled or timed out, leaves its files behind, and the action's final step shows them.
 
 ### Per-run parallel index
 

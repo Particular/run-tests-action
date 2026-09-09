@@ -56,3 +56,14 @@ runs:
         TEST_PROJECTS: ${{ inputs.projects }}
         MAX_PARALLEL: ${{ inputs.max-parallel }}
       run: ${{ github.action_path }}/run-tests.ps1
+    # Each run's output is buffered and only replayed once that run finishes, so a run that was still
+    # going when the job was cancelled or timed out would otherwise leave nothing behind.
+    - name: Show output of unfinished test runs
+      if: always()
+      shell: pwsh
+      run: |
+        Get-ChildItem (Join-Path $Env:RUNNER_TEMP 'run-tests-action') -File -ErrorAction SilentlyContinue | Where-Object Length -gt 0 | ForEach-Object {
+          Write-Output "::group::Unfinished: $($_.Name)"
+          Get-Content $_.FullName
+          Write-Output '::endgroup::'
+        }

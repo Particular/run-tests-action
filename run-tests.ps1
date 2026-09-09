@@ -242,6 +242,12 @@ else {
     # index. The action itself does no port arithmetic. (See design decision D3.)
     $exitCode = 0
 
+    # Buffered output lives in a fixed place with readable names, and a run's files are only removed
+    # once its output has been replayed, so a run that never completes, because the job was cancelled
+    # or hit its timeout, leaves its files behind for the final step of the action to show.
+    $outputDirectory = Join-Path ($Env:RUNNER_TEMP ?? [IO.Path]::GetTempPath()) 'run-tests-action'
+    New-Item -ItemType Directory -Path $outputDirectory -Force | Out-Null
+
     function Complete-Run($run) {
         Write-Output "::group::Running $($run.Label)"
         foreach ($stream in @($run.OutFile, $run.ErrFile)) {
@@ -263,8 +269,9 @@ else {
             $run = $_
             $rw = $using:reportWarnings
 
-            $run | Add-Member -NotePropertyName OutFile -NotePropertyValue ([IO.Path]::GetTempFileName())
-            $run | Add-Member -NotePropertyName ErrFile -NotePropertyValue ([IO.Path]::GetTempFileName())
+            $outputName = "$($run.Index)-$([IO.Path]::GetFileNameWithoutExtension($run.Project)).$($run.Framework)"
+            $run | Add-Member -NotePropertyName OutFile -NotePropertyValue (Join-Path $using:outputDirectory "$outputName.out.log")
+            $run | Add-Member -NotePropertyName ErrFile -NotePropertyValue (Join-Path $using:outputDirectory "$outputName.err.log")
 
             $arguments = @(
                 'test', $run.Project
