@@ -212,8 +212,6 @@ if ($maxParallel -eq 1) {
 }
 else {
     # --- Parallel path: ported from ServiceControl tools/run-tests.ps1 ---
-    Write-Output "Max parallel test runs = $maxParallel$(if ($maxParallelSetting -eq 'auto') { ' (auto)' })"
-
     if ($Env:HAS_RESET_SCRIPT -eq 'true') {
         Write-Output "::warning::reset-script is ignored when max-parallel > 1. Running it concurrently with in-flight test processes is unsafe, and 'between frameworks' has no meaning once runs are flattened."
     }
@@ -257,6 +255,9 @@ else {
     if ($runs.Count -eq 0) {
         throw 'No test projects were runnable on this platform.'
     }
+
+    $maxParallel = [Math]::Min($maxParallel, $runs.Count)
+    Write-Output "Max parallel test runs = $maxParallel$(if ($maxParallelSetting -eq 'auto') { ' (auto)' })"
 
     # Previous durations, keyed by run. A missing or unreadable file only costs the ordering.
     $timingsFile = $Env:TIMINGS_FILE
