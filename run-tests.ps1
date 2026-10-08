@@ -34,10 +34,10 @@
 # Parallelism and ordering (parallel mode only):
 #
 #  * MAX_PARALLEL may be 'auto', which uses the CPU count of the runner.
-#  * Runs are normally started in alphabetical order. When TIMINGS_FILE points at a file with the
-#    durations recorded by a previous invocation (restored from the GitHub Actions cache by
-#    action.yml), the slowest runs start first so they do not end up as the tail of the job. Runs
-#    without a recorded duration start before the known ones, as they may be the slow ones.
+#  * Runs are normally started in alphabetical order. When TIMINGS_FILE points at the last 10
+#    durations of each run (restored from the GitHub Actions cache by action.yml), the runs with
+#    the highest median start first so they do not end up as the tail of the job. Runs without a
+#    recorded duration start before the known ones, as they may be the slow ones.
 #    PARTICULAR_RUN_TESTS_ACTION_PARALLEL_INDEX is unaffected: it always follows alphabetical order.
 #
 # EXPLICIT_TEST_FRAMEWORK short-circuits framework discovery to a single value in both modes.
@@ -259,25 +259,43 @@ else {
     $maxParallel = [Math]::Min($maxParallel, $runs.Count)
     Write-Output "Max parallel test runs = $maxParallel$(if ($maxParallelSetting -eq 'auto') { ' (auto)' })"
 
-    # Previous durations, keyed by run. A missing or unreadable file only costs the ordering.
+    # Recent durations per run, oldest first. A missing or unreadable file only costs the ordering.
+    # Entries written by earlier versions hold a single number instead of a list.
+    $timingsWindow = 10
     $timingsFile = $Env:TIMINGS_FILE
-    $previousTimings = @{}
+    $previousSamples = @{}
     if ($timingsFile -and (Test-Path $timingsFile)) {
         try {
-            (Get-Content $timingsFile -Raw | ConvertFrom-Json -AsHashtable).GetEnumerator() | ForEach-Object { $previousTimings[$_.Key] = [double]$_.Value }
-            Write-Output "Loaded durations of $($previousTimings.Count) previous test run(s); starting the slowest runs first."
+            (Get-Content $timingsFile -Raw | ConvertFrom-Json -AsHashtable).GetEnumerator() | ForEach-Object {
+                $previousSamples[$_.Key] = @($_.Value | ForEach-Object { [double]$_ })
+            }
+            Write-Output "Loaded durations of $($previousSamples.Count) previous test run(s); starting the slowest runs first."
         }
         catch {
             Write-Output "::warning::Ignoring unreadable test run durations in '$timingsFile': $($_.Exception.Message)"
-            $previousTimings = @{}
+            $previousSamples = @{}
+        }
+    }
+
+    # The median, so one run that stalled does not reshuffle the order.
+    function Get-Median([double[]]$values) {
+        $sorted = @($values | Sort-Object)
+        $middle = [int][Math]::Floor($sorted.Count / 2)
+        if ($sorted.Count % 2 -eq 1) { $sorted[$middle] } else { ($sorted[$middle - 1] + $sorted[$middle]) / 2 }
+    }
+
+    $expectedDurations = @{}
+    foreach ($entry in $previousSamples.GetEnumerator()) {
+        if ($entry.Value.Count -gt 0) {
+            $expectedDurations[$entry.Key] = Get-Median $entry.Value
         }
     }
 
     $runsInStartOrder = $runs
-    if ($previousTimings.Count -gt 0) {
+    if ($expectedDurations.Count -gt 0) {
         $runsInStartOrder = $runs | Sort-Object `
-            @{ Expression = { if ($previousTimings.ContainsKey($_.Key)) { 1 } else { 0 } } }, `
-            @{ Expression = { $previousTimings[$_.Key] }; Descending = $true }, `
+            @{ Expression = { if ($expectedDurations.ContainsKey($_.Key)) { 1 } else { 0 } } }, `
+            @{ Expression = { $expectedDurations[$_.Key] }; Descending = $true }, `
             Index
     }
 
@@ -368,15 +386,18 @@ else {
         # Only keep entries for runs that exist now, so removed projects do not pile up.
         $updatedTimings = [ordered]@{}
         foreach ($run in $runs) {
-            $duration = $durations[$run.Key]
-            $previous = $previousTimings[$run.Key]
-            # Blended with the previous value so one noisy run does not reshuffle the order.
-            if ($null -ne $duration -and $null -ne $previous) {
-                $duration = ($duration + $previous) / 2
+            $samples = [Collections.Generic.List[double]]::new()
+            if ($previousSamples.ContainsKey($run.Key)) {
+                $samples.AddRange([double[]]$previousSamples[$run.Key])
             }
-            $duration ??= $previous
-            if ($null -ne $duration) {
-                $updatedTimings[$run.Key] = [Math]::Round($duration, 1)
+            if ($durations.ContainsKey($run.Key)) {
+                $samples.Add([Math]::Round($durations[$run.Key], 1))
+            }
+            if ($samples.Count -gt $timingsWindow) {
+                $samples.RemoveRange(0, $samples.Count - $timingsWindow)
+            }
+            if ($samples.Count -gt 0) {
+                $updatedTimings[$run.Key] = @($samples)
             }
         }
 

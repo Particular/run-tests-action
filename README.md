@@ -110,13 +110,13 @@ On a single-CPU runner `auto` results in a sequential run, which means `reset-sc
 
 By default, parallel runs start in alphabetical order. A slow assembly that happens to sort late then starts late and extends the job after everything else has finished.
 
-To avoid that, the action records how long each successful run took and stores it in the GitHub Actions cache. The next invocation restores the durations and starts the slowest runs first. Runs without a recorded duration, such as new projects, start before the known ones because they might be the slow ones. Without cached data, the order stays alphabetical. The sequential mode (`max-parallel: 1`) is not affected.
+To avoid that, the action records how long each successful run took (the last 10 per run) and stores it in the GitHub Actions cache. The next invocation restores the durations and starts the slowest runs first. Runs without a recorded duration, such as new projects, start before the known ones because they might be the slow ones. Without cached data, the order stays alphabetical. The sequential mode (`max-parallel: 1`) is not affected.
 
 The timings are only a scheduling hint, so a missing, stale, or unreadable cache never fails the run. Things to be aware of:
 
 * The cache key combines the runner OS, workflow name, job id, and the `projects`, `framework`, and `target-platform` inputs. Matrix legs that differ only in something the action cannot see should set `timings-cache-key` to keep their timings apart.
 * Each invocation saves a new, very small cache entry, because cache entries are immutable. Old entries are evicted by the usual cache retention rules. Pull requests restore the timings of the default branch until they save their own.
-* The recorded duration is the average of the previous value and the latest run, so one unusually slow or fast run does not reshuffle the order.
+* The last 10 durations of each run are kept and the order follows their median, so one unusually slow or fast run does not reshuffle the order. A change in how long a run takes shows up after a handful of invocations.
 * Failed runs do not update their recorded duration, because they tend to stop early.
 
 To always order alphabetically, set `cache-timings: false`:
