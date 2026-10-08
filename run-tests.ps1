@@ -31,6 +31,8 @@
 #  * Otherwise, today's discovery is used: every *.csproj under src/ that references
 #    Microsoft.NET.Test.Sdk.
 #
+# MAX_PARALLEL may be 'auto', which uses the CPU count of the runner.
+#
 # EXPLICIT_TEST_FRAMEWORK short-circuits framework discovery to a single value in both modes.
 
 $ErrorActionPreference = 'Stop'
@@ -135,7 +137,20 @@ if ($Env:REPORT_WARNINGS -eq 'true') {
     $reportWarnings = 'true'
 }
 
-$maxParallel = [Math]::Max(1, [int]$Env:MAX_PARALLEL)
+$maxParallelSetting = "$($Env:MAX_PARALLEL)".Trim()
+$parsed = 0
+if ($maxParallelSetting -eq '') {
+    $maxParallel = 1
+}
+elseif ($maxParallelSetting -eq 'auto') {
+    $maxParallel = [Environment]::ProcessorCount
+}
+elseif ($maxParallelSetting -match '^[1-9][0-9]*$' -and [int]::TryParse($maxParallelSetting, [ref]$parsed)) {
+    $maxParallel = $parsed
+}
+else {
+    throw "max-parallel must be 'auto' or a positive integer, but was '$maxParallelSetting'."
+}
 if ($maxParallel -eq 1) {
     # --- Sequential path: historic behavior, reset-script between frameworks ---
     $testProjectsSorted = $testProjects.GetEnumerator() | Sort-Object Name
@@ -190,7 +205,7 @@ if ($maxParallel -eq 1) {
 }
 else {
     # --- Parallel path: ported from ServiceControl tools/run-tests.ps1 ---
-    Write-Output "Max parallel test runs = $maxParallel"
+    Write-Output "Max parallel test runs = $maxParallel$(if ($maxParallelSetting -eq 'auto') { ' (auto)' })"
 
     if ($Env:HAS_RESET_SCRIPT -eq 'true') {
         Write-Output "::warning::reset-script is ignored when max-parallel > 1. Running it concurrently with in-flight test processes is unsafe, and 'between frameworks' has no meaning once runs are flattened."

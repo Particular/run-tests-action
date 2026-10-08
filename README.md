@@ -79,7 +79,7 @@ When `projects` is combined with `framework`, each listed project is run only ag
 
 ## Parallel execution
 
-By default the action runs `dotnet test` sequentially. Pass `max-parallel` (1–16) to run several test assemblies concurrently. (Added in v1.8.0)
+By default the action runs `dotnet test` sequentially. Pass `max-parallel` to run several test assemblies concurrently. (Added in v1.8.0)
 
 ```yaml
     steps:
@@ -91,6 +91,20 @@ By default the action runs `dotnet test` sequentially. Pass `max-parallel` (1–
 ```
 
 When `max-parallel > 1`, each run's stdout and stderr are buffered to files under `$RUNNER_TEMP/run-tests-action` and replayed inside a `::group::` block once that run completes, because interleaved live `dotnet test` output is unreadable. The step fails if any run exits non-zero. A run that never completes, because the job was cancelled or timed out, leaves its files behind, and the action's final step shows them.
+
+### Matching the runner's CPU count
+
+Pass `auto` to use the number of CPUs of the runner instead of a fixed number, so the same workflow adapts when it moves to a larger runner:
+
+```yaml
+    steps:
+      - name: Run tests
+        uses: Particular/run-tests-action@v1.8.0
+        with:
+          max-parallel: auto
+```
+
+On a single-CPU runner `auto` results in a sequential run, which means `reset-script` is honored again.
 
 ### Per-run parallel index
 
