@@ -368,7 +368,13 @@ else {
         # Only keep entries for runs that exist now, so removed projects do not pile up.
         $updatedTimings = [ordered]@{}
         foreach ($run in $runs) {
-            $duration = $durations[$run.Key] ?? $previousTimings[$run.Key]
+            $duration = $durations[$run.Key]
+            $previous = $previousTimings[$run.Key]
+            # Blended with the previous value so one noisy run does not reshuffle the order.
+            if ($null -ne $duration -and $null -ne $previous) {
+                $duration = ($duration + $previous) / 2
+            }
+            $duration ??= $previous
             if ($null -ne $duration) {
                 $updatedTimings[$run.Key] = [Math]::Round($duration, 1)
             }

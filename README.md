@@ -116,6 +116,7 @@ The timings are only a scheduling hint, so a missing, stale, or unreadable cache
 
 * The cache key combines the runner OS, workflow name, job id, and the `projects`, `framework`, and `target-platform` inputs. Matrix legs that differ only in something the action cannot see should set `timings-cache-key` to keep their timings apart.
 * Each invocation saves a new, very small cache entry, because cache entries are immutable. Old entries are evicted by the usual cache retention rules. Pull requests restore the timings of the default branch until they save their own.
+* The recorded duration is the average of the previous value and the latest run, so one unusually slow or fast run does not reshuffle the order.
 * Failed runs do not update their recorded duration, because they tend to stop early.
 
 To always order alphabetically, set `cache-timings: false`:
