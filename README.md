@@ -79,7 +79,7 @@ When `projects` is combined with `framework`, each listed project is run only ag
 
 ## Parallel execution
 
-By default the action runs `dotnet test` sequentially. Pass `max-parallel` (1–16) to run several test assemblies concurrently. (Added in v1.8.0)
+By default the action runs `dotnet test` sequentially. Pass `max-parallel` (a positive integer) to run several test assemblies concurrently. Any other value fails the step, and values above the number of runs are capped to it. (Added in v1.8.0)
 
 ```yaml
     steps:
