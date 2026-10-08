@@ -31,7 +31,14 @@
 #  * Otherwise, today's discovery is used: every *.csproj under src/ that references
 #    Microsoft.NET.Test.Sdk.
 #
-# MAX_PARALLEL may be 'auto', which uses the CPU count of the runner.
+# Parallelism and ordering (parallel mode only):
+#
+#  * MAX_PARALLEL may be 'auto', which uses the CPU count of the runner.
+#  * Runs are normally started in alphabetical order. When TIMINGS_FILE points at a file with the
+#    durations recorded by a previous invocation (restored from the GitHub Actions cache by
+#    action.yml), the slowest runs start first so they do not end up as the tail of the job. Runs
+#    without a recorded duration start before the known ones, as they may be the slow ones.
+#    PARTICULAR_RUN_TESTS_ACTION_PARALLEL_INDEX is unaffected: it always follows alphabetical order.
 #
 # EXPLICIT_TEST_FRAMEWORK short-circuits framework discovery to a single value in both modes.
 
@@ -234,8 +241,11 @@ else {
                 continue
             }
 
+            $relativeProject = [IO.Path]::GetRelativePath($PWD.Path, $project.Name).Replace('\', '/')
+
             $runs.Add([pscustomobject]@{
                     Label     = "$(Split-Path $project.Name -Leaf) ($framework)"
+                    Key       = "$relativeProject|$framework"
                     Project   = $project.Name
                     Framework = $framework
                     Index     = $runIndex
@@ -246,6 +256,28 @@ else {
 
     if ($runs.Count -eq 0) {
         throw 'No test projects were runnable on this platform.'
+    }
+
+    # Previous durations, keyed by run. A missing or unreadable file only costs the ordering.
+    $timingsFile = $Env:TIMINGS_FILE
+    $previousTimings = @{}
+    if ($timingsFile -and (Test-Path $timingsFile)) {
+        try {
+            (Get-Content $timingsFile -Raw | ConvertFrom-Json -AsHashtable).GetEnumerator() | ForEach-Object { $previousTimings[$_.Key] = [double]$_.Value }
+            Write-Output "Loaded durations of $($previousTimings.Count) previous test run(s); starting the slowest runs first."
+        }
+        catch {
+            Write-Output "::warning::Ignoring unreadable test run durations in '$timingsFile': $($_.Exception.Message)"
+            $previousTimings = @{}
+        }
+    }
+
+    $runsInStartOrder = $runs
+    if ($previousTimings.Count -gt 0) {
+        $runsInStartOrder = $runs | Sort-Object `
+            @{ Expression = { if ($previousTimings.ContainsKey($_.Key)) { 1 } else { 0 } } }, `
+            @{ Expression = { $previousTimings[$_.Key] }; Descending = $true }, `
+            Index
     }
 
     # Per-run parallel index. Concurrent runs need to distinguish themselves (e.g. so suites that
@@ -277,9 +309,15 @@ else {
             Write-Output "::error::$($run.Label) exit code = $($run.ExitCode)"
             $script:exitCode = 1
         }
+        else {
+            # Failed runs often stop early, which would make them look cheap.
+            $script:durations[$run.Key] = $run.Duration
+        }
     }
 
-    $runs `
+    $durations = @{}
+
+    $runsInStartOrder `
         | ForEach-Object -ThrottleLimit $maxParallel -Parallel {
             $run = $_
             $rw = $using:reportWarnings
@@ -303,6 +341,7 @@ else {
             # object by the sequential ForEach-Object stage below.
             Write-Host "Starting $($run.Label)"
 
+            $stopwatch = [Diagnostics.Stopwatch]::StartNew()
             $process = Start-Process -FilePath 'dotnet' -ArgumentList $arguments -NoNewWindow -PassThru `
                     -RedirectStandardOutput $run.OutFile -RedirectStandardError $run.ErrFile `
                     -Environment @{ PARTICULAR_RUN_TESTS_ACTION_PARALLEL_INDEX = "$($run.Index)" }
@@ -317,11 +356,31 @@ else {
             # test process itself is done; this only gives the pump a moment to drain.
             [void]$process.WaitForExit(5000)
 
+            $run | Add-Member -NotePropertyName Duration -NotePropertyValue $stopwatch.Elapsed.TotalSeconds
             $run | Add-Member -NotePropertyName ExitCode -NotePropertyValue $process.ExitCode
             $run
         } `
         # Stage 2 (sequential): replay each run's buffered output so it doesn't interleave.
         | ForEach-Object { Complete-Run $_ }
+
+    if ($timingsFile) {
+        # Only keep entries for runs that exist now, so removed projects do not pile up.
+        $updatedTimings = [ordered]@{}
+        foreach ($run in $runs) {
+            $duration = $durations[$run.Key] ?? $previousTimings[$run.Key]
+            if ($null -ne $duration) {
+                $updatedTimings[$run.Key] = [Math]::Round($duration, 1)
+            }
+        }
+
+        if ($updatedTimings.Count -gt 0) {
+            New-Item -ItemType Directory -Path (Split-Path $timingsFile) -Force | Out-Null
+            $updatedTimings | ConvertTo-Json | Set-Content -Path $timingsFile
+            if ($Env:GITHUB_OUTPUT) {
+                'timings-updated=true' | Out-File -FilePath $Env:GITHUB_OUTPUT -Encoding utf8 -Append
+            }
+        }
+    }
 
     exit $exitCode
 }
