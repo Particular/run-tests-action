@@ -31,6 +31,21 @@ inputs:
       runner.
     required: false
     default: '1'
+  cache-timings:
+    description: >-
+      Only used when max-parallel is not 1. Stores how long each test run took
+      in the GitHub Actions cache and uses it on later runs to start the
+      slowest runs first instead of ordering alphabetically. Set to 'false'
+      to always order alphabetically.
+    required: false
+    default: 'true'
+  timings-cache-key:
+    description: >-
+      Optional extra text mixed into the timings cache key. Only needed when
+      jobs that share a workflow, job id, runner OS, projects and framework
+      run different tests, for example matrix legs that differ only by an
+      environment variable.
+    required: false
 runs:
   using: "composite"
   steps:
@@ -39,13 +54,29 @@ runs:
       shell: pwsh
       env:
         RESET_SCRIPT: ${{ inputs.reset-script }}
+        TIMINGS_KEY_PARTS: ${{ github.workflow }}|${{ github.job }}|${{ inputs.projects }}|${{ inputs.framework }}|${{ inputs.target-platform }}|${{ inputs.timings-cache-key }}
       run: |
         $script = $Env:RESET_SCRIPT
         if (-not ([string]::IsNullOrEmpty($script))) {
           echo $Env:RESET_SCRIPT > ${{ github.action_path }}/reset-script.ps1
           echo "has-reset-script=true" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
         }
-    - name: Run tests
+
+        # Cache keys are limited in length and characters, so the identifying parts are hashed.
+        $bytes = [Text.Encoding]::UTF8.GetBytes($Env:TIMINGS_KEY_PARTS)
+        $hash = [Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($bytes)).Substring(0, 16).ToLowerInvariant()
+        echo "timings-key=$hash" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+        echo "timings-directory=$(Join-Path $Env:RUNNER_TEMP 'run-tests-action-timings')" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+    - name: Restore test run timings
+      if: inputs.max-parallel != '1' && inputs.cache-timings != 'false'
+      uses: actions/cache/restore@v6
+      with:
+        path: ${{ steps.setup.outputs.timings-directory }}
+        key: run-tests-timings-v1-${{ runner.os }}-${{ steps.setup.outputs.timings-key }}-${{ github.run_id }}-${{ github.run_attempt }}
+        restore-keys: |
+          run-tests-timings-v1-${{ runner.os }}-${{ steps.setup.outputs.timings-key }}-
+    - id: run-tests
+      name: Run tests
       shell: pwsh
       env:
         RESET_SCRIPT: ${{ github.action_path }}/reset-script.ps1
@@ -56,7 +87,14 @@ runs:
         TEST_FILTER: ${{ inputs.filter }}
         TEST_PROJECTS: ${{ inputs.projects }}
         MAX_PARALLEL: ${{ inputs.max-parallel }}
+        TIMINGS_FILE: ${{ inputs.cache-timings != 'false' && format('{0}/timings.json', steps.setup.outputs.timings-directory) || '' }}
       run: ${{ github.action_path }}/run-tests.ps1
+    - name: Save test run timings
+      if: always() && inputs.max-parallel != '1' && inputs.cache-timings != 'false' && steps.run-tests.outputs.timings-updated == 'true'
+      uses: actions/cache/save@v6
+      with:
+        path: ${{ steps.setup.outputs.timings-directory }}
+        key: run-tests-timings-v1-${{ runner.os }}-${{ steps.setup.outputs.timings-key }}-${{ github.run_id }}-${{ github.run_attempt }}
     # Each run's output is buffered and only replayed once that run finishes, so a run that was still
     # going when the job was cancelled or timed out would otherwise leave nothing behind.
     - name: Show output of unfinished test runs

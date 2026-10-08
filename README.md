@@ -106,9 +106,32 @@ Pass `auto` to use the number of CPUs of the runner instead of a fixed number, s
 
 On a single-CPU runner `auto` results in a sequential run, which means `reset-script` is honored again.
 
+### Starting the slowest runs first
+
+By default, parallel runs start in alphabetical order. A slow assembly that happens to sort late then starts late and extends the job after everything else has finished.
+
+To avoid that, the action records how long each successful run took and stores it in the GitHub Actions cache. The next invocation restores the durations and starts the slowest runs first. Runs without a recorded duration, such as new projects, start before the known ones because they might be the slow ones. Without cached data, the order stays alphabetical. The sequential mode (`max-parallel: 1`) is not affected.
+
+The timings are only a scheduling hint, so a missing, stale, or unreadable cache never fails the run. Things to be aware of:
+
+* The cache key combines the runner OS, workflow name, job id, and the `projects`, `framework`, and `target-platform` inputs. Matrix legs that differ only in something the action cannot see should set `timings-cache-key` to keep their timings apart.
+* Each invocation saves a new, very small cache entry, because cache entries are immutable. Old entries are evicted by the usual cache retention rules. Pull requests restore the timings of the default branch until they save their own.
+* Failed runs do not update their recorded duration, because they tend to stop early.
+
+To always order alphabetically, set `cache-timings: false`:
+
+```yaml
+    steps:
+      - name: Run tests
+        uses: Particular/run-tests-action@v1.8.0
+        with:
+          max-parallel: auto
+          cache-timings: false
+```
+
 ### Per-run parallel index
 
-Every spawned `dotnet test` process has the environment variable `PARTICULAR_RUN_TESTS_ACTION_PARALLEL_INDEX` set to its 0-based position in the flattened run list, immediately before it is spawned (so the child inherits it). The value is unique across all runs in the invocation, so concurrent runs always see distinct indices. In sequential mode (`max-parallel == 1`) the index is always `0`.
+Every spawned `dotnet test` process has the environment variable `PARTICULAR_RUN_TESTS_ACTION_PARALLEL_INDEX` set to its 0-based position in the flattened run list, immediately before it is spawned (so the child inherits it). The value is unique across all runs in the invocation, so concurrent runs always see distinct indices. The index follows the alphabetical order and does not change when the start order is optimized by recorded durations. In sequential mode (`max-parallel == 1`) the index is always `0`.
 
 Consumers that need per-run distinct resources — ports, temp directories, or anything else — can read this env var and derive what they need from the index. The action itself does no port arithmetic, keeping it repository-agnostic. For example, a suite using RavenDB.Embedded (which binds a fixed port and would otherwise collide across concurrent runs) can compute its port from the index:
 
