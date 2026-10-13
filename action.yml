@@ -27,7 +27,8 @@ inputs:
       Maximum number of `dotnet test` processes to run concurrently. Defaults
       to 1 (sequential), which preserves the historic behavior. Values greater
       than 1 enable parallel execution with buffered, per-run output replay,
-      and disable reset-script.
+      and disable reset-script. Must be a positive integer; anything else
+      fails the step. Values above the number of runs have no further effect.
     required: false
     default: '1'
 runs:

@@ -135,7 +135,11 @@ if ($Env:REPORT_WARNINGS -eq 'true') {
     $reportWarnings = 'true'
 }
 
-$maxParallel = [Math]::Max(1, [int]$Env:MAX_PARALLEL)
+$maxParallelSetting = "$($Env:MAX_PARALLEL)".Trim()
+$maxParallel = 1
+if ($maxParallelSetting -ne '' -and ($maxParallelSetting -notmatch '^[1-9][0-9]*$' -or -not [int]::TryParse($maxParallelSetting, [ref]$maxParallel))) {
+    throw "max-parallel must be a positive integer, but was '$maxParallelSetting'."
+}
 if ($maxParallel -eq 1) {
     # --- Sequential path: historic behavior, reset-script between frameworks ---
     $testProjectsSorted = $testProjects.GetEnumerator() | Sort-Object Name
@@ -190,8 +194,6 @@ if ($maxParallel -eq 1) {
 }
 else {
     # --- Parallel path: ported from ServiceControl tools/run-tests.ps1 ---
-    Write-Output "Max parallel test runs = $maxParallel"
-
     if ($Env:HAS_RESET_SCRIPT -eq 'true') {
         Write-Output "::warning::reset-script is ignored when max-parallel > 1. Running it concurrently with in-flight test processes is unsafe, and 'between frameworks' has no meaning once runs are flattened."
     }
@@ -232,6 +234,9 @@ else {
     if ($runs.Count -eq 0) {
         throw 'No test projects were runnable on this platform.'
     }
+
+    $maxParallel = [Math]::Min($maxParallel, $runs.Count)
+    Write-Output "Max parallel test runs = $maxParallel"
 
     # Per-run parallel index. Concurrent runs need to distinguish themselves (e.g. so suites that
     # bind a fixed port like ServiceControl's RavenDB.Embedded tests do not all probe-and-bind the
